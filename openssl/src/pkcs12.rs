@@ -207,8 +207,11 @@ mod test {
     use super::*;
 
     #[test]
-    #[cfg_attr(ossl300, ignore)] // https://github.com/openssl/openssl/issues/11672
+    #[cfg_attr(all(ossl300, features = "vendored"), ignore)]
     fn parse() {
+        #[cfg(ossl300)]
+        let _provider = crate::provider::Provider::try_load(None, "legacy", true).unwrap();
+
         let der = include_bytes!("../test/identity.p12");
         let pkcs12 = Pkcs12::from_der(der).unwrap();
         let parsed = pkcs12.parse("mypass").unwrap();
@@ -227,8 +230,11 @@ mod test {
     }
 
     #[test]
-    #[cfg_attr(ossl300, ignore)] // https://github.com/openssl/openssl/issues/11672
+    #[cfg_attr(all(ossl300, features = "vendored"), ignore)]
     fn parse_empty_chain() {
+        #[cfg(ossl300)]
+        let _provider = crate::provider::Provider::try_load(None, "legacy", true).unwrap();
+
         let der = include_bytes!("../test/keystore-empty-chain.p12");
         let pkcs12 = Pkcs12::from_der(der).unwrap();
         let parsed = pkcs12.parse("cassandra").unwrap();
@@ -236,7 +242,6 @@ mod test {
     }
 
     #[test]
-    #[cfg_attr(ossl300, ignore)] // https://github.com/openssl/openssl/issues/11672
     fn create() {
         let subject_name = "ns.example.com";
         let rsa = Rsa::generate(2048).unwrap();
