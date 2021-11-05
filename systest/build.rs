@@ -61,11 +61,15 @@ fn main() {
         .header("openssl/aes.h")
         .header("openssl/ocsp.h")
         .header("openssl/evp.h")
-        .header("openssl/x509_vfy.h")
-        .header("openssl/provider.h");
+        .header("openssl/x509_vfy.h");
 
     if openssl_version.is_some() {
         cfg.header("openssl/cms.h");
+    }
+
+    #[allow(clippy::unusual_byte_groupings)]
+    if openssl_version.map_or(false, |v| v >= 0x3_00_00_00_0) {
+        cfg.header("openssl/provider.h");
     }
 
     #[allow(clippy::if_same_then_else)]
