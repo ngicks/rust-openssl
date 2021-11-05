@@ -258,7 +258,7 @@ mod test {
     use crate::x509::X509;
 
     #[test]
-    #[cfg_attr(all(ossl300, features = "vendored"), ignore)]
+    #[cfg_attr(all(ossl300, feature = "vendored"), ignore)]
     fn cms_encrypt_decrypt() {
         #[cfg(ossl300)]
         let _provider = crate::provider::Provider::try_load(None, "legacy", true).unwrap();
