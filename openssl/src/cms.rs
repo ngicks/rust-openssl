@@ -10,6 +10,7 @@ use foreign_types::{ForeignType, ForeignTypeRef};
 use libc::c_uint;
 use std::ptr;
 
+use crate::asn1::Asn1OctetString;
 use crate::bio::{MemBio, MemBioSlice};
 use crate::error::ErrorStack;
 use crate::pkey::{HasPrivate, PKeyRef};
@@ -118,6 +119,15 @@ impl CmsContentInfoRef {
 
             Ok(out.get_buf().to_owned())
         }
+    }
+
+    /// Gets content depending on its type.
+    /// For exapmle, eContent of EncapsulatedContentInfo if it is `NID_pkcs7_signed`.
+    #[corresponds(CMS_get0_content)]
+    pub fn get_content(&self) -> Result<Vec<u8>, ErrorStack> {
+        Ok(Vec::from(unsafe {
+            Asn1OctetString::from_ptr(cvt_p(ffi::CMS_get0_content(self.as_ptr()))?).as_slice()
+        }))
     }
 
     to_der! {
