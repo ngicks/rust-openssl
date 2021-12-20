@@ -1,14 +1,14 @@
 use std::ptr;
 
 use crate::{
-    asn1::{Asn1GeneralizedTimeRef, Asn1IntegerRef},
+    asn1::{Asn1GeneralizedTimeRef, Asn1IntegerRef, Asn1ObjectRef},
     cvt_n, cvt_p,
-    x509::GeneralName,
+    x509::GeneralNameRef,
 };
-use foreign_types::{ForeignType, ForeignTypeRef};
+use foreign_types::ForeignTypeRef;
 use openssl_macros::corresponds;
 
-use crate::{asn1::Asn1Object, error::ErrorStack, pkcs7::Pkcs7Ref};
+use crate::{error::ErrorStack, pkcs7::Pkcs7Ref};
 
 foreign_type_and_impl_send_sync! {
     type CType = ffi::TS_MSG_IMPRINT;
@@ -67,7 +67,9 @@ impl TsTstInfo {
     pub fn from_pkcs7(pcks7: Pkcs7Ref) -> Self {
         TsTstInfo(unsafe { ffi::PKCS7_to_TS_TST_INFO(pcks7.as_ptr()) })
     }
+}
 
+impl<'a> TsTstInfoRef {
     pub fn get_version(&self) -> Result<i64, ErrorStack> {
         let version = unsafe { ffi::TS_TST_INFO_get_version(self.as_ptr()) };
         if version < 0 {
@@ -77,32 +79,19 @@ impl TsTstInfo {
         }
     }
 
-    pub fn get_policy_id(&self) -> Result<Asn1Object, ErrorStack> {
+    pub fn get_policy_id(&'a self) -> Result<&'a Asn1ObjectRef, ErrorStack> {
         unsafe {
             let policy_id_ptr = cvt_p(ffi::TS_TST_INFO_get_policy_id(self.as_ptr()))?;
-            Ok(Asn1Object::from_ptr(policy_id_ptr))
+            Ok(Asn1ObjectRef::from_ptr(policy_id_ptr))
         }
     }
 
-    pub fn get_msg_imprint(&self) -> Result<TsMessageImprint, ErrorStack> {
+    pub fn get_msg_imprint(&'a self) -> Result<&'a TsMessageImprintRef, ErrorStack> {
         Ok(unsafe {
-            TsMessageImprint::from_ptr(cvt_p(ffi::TS_TST_INFO_get_msg_imprint(self.as_ptr()))?)
+            TsMessageImprintRef::from_ptr(cvt_p(ffi::TS_TST_INFO_get_msg_imprint(self.as_ptr()))?)
         })
     }
 
-    pub fn get_ordering(&self) -> Result<i32, ErrorStack> {
-        unsafe { cvt_n(ffi::TS_TST_INFO_get_ordering(self.as_ptr())) }
-    }
-
-    pub fn get_tsa(&self) -> Result<GeneralName, ErrorStack> {
-        unsafe {
-            let tsa_ptr = cvt_p(ffi::TS_TST_INFO_get_tsa(self.as_ptr()))?;
-            Ok(GeneralName::from_ptr(tsa_ptr))
-        }
-    }
-}
-
-impl<'a> TsTstInfo {
     pub fn get_serial(&'a self) -> Result<&'a Asn1IntegerRef, ErrorStack> {
         unsafe {
             // TS_TST_INFO_get_serial just returns pointer to member of internal struct
@@ -127,7 +116,7 @@ impl<'a> TsTstInfo {
         }
     }
 
-    pub fn get_accuracy(&self) -> Result<&'a TsAccuracyRef, ErrorStack> {
+    pub fn get_accuracy(&'a self) -> Result<&'a TsAccuracyRef, ErrorStack> {
         unsafe {
             let accuracy_ptr = ffi::TS_TST_INFO_get_accuracy(self.as_ptr());
             if accuracy_ptr.is_null() {
@@ -137,7 +126,11 @@ impl<'a> TsTstInfo {
         }
     }
 
-    pub fn get_nonce(&self) -> Result<&'a Asn1IntegerRef, ErrorStack> {
+    pub fn get_ordering(&self) -> Result<i32, ErrorStack> {
+        unsafe { cvt_n(ffi::TS_TST_INFO_get_ordering(self.as_ptr())) }
+    }
+
+    pub fn get_nonce(&'a self) -> Result<&'a Asn1IntegerRef, ErrorStack> {
         unsafe {
             // TS_TST_INFO_get_serial just returns pointer to member of internal struct
             let serial_ptr = ffi::TS_TST_INFO_get_nonce(self.as_ptr());
@@ -146,6 +139,13 @@ impl<'a> TsTstInfo {
             }
 
             Ok(Asn1IntegerRef::from_ptr::<'a>(serial_ptr as *mut _))
+        }
+    }
+
+    pub fn get_tsa(&'a self) -> Result<&'a GeneralNameRef, ErrorStack> {
+        unsafe {
+            let tsa_ptr = cvt_p(ffi::TS_TST_INFO_get_tsa(self.as_ptr()))?;
+            Ok(GeneralNameRef::from_ptr(tsa_ptr))
         }
     }
 }
