@@ -125,8 +125,12 @@ impl<'a> TsTstInfoRef {
         }
     }
 
-    pub fn get_ordering(&self) -> Result<i32, ErrorStack> {
-        unsafe { cvt_n(ffi::TS_TST_INFO_get_ordering(self.as_ptr())) }
+    pub fn get_ordering(&self) -> bool {
+        if unsafe { ffi::TS_TST_INFO_get_ordering(self.as_ptr()) } > 0 {
+            true
+        } else {
+            false
+        }
     }
 
     pub fn get_nonce(&'a self) -> Result<&'a Asn1IntegerRef, ErrorStack> {
