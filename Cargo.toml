@@ -5,6 +5,7 @@ members = [
     "openssl-macros",
     "openssl-sys",
     "systest",
+    "playground"
 ]
 
 [patch.crates-io]
