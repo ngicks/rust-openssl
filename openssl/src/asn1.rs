@@ -65,6 +65,25 @@ foreign_type_and_impl_send_sync! {
     pub struct Asn1GeneralizedTimeRef;
 }
 
+impl Asn1GeneralizedTimeRef {
+    /// Converts the ASN.1 underlying format to UTF8
+    ///
+    /// ASN.1 strings may utilize UTF-16, ASCII, BMP, or UTF8.  This is important to
+    /// consume the string in a meaningful way without knowing the underlying
+    /// format.
+    #[corresponds(ASN1_STRING_to_UTF8)]
+    pub fn as_utf8(&self) -> Result<OpensslString, ErrorStack> {
+        unsafe {
+            let mut ptr = ptr::null_mut();
+            let len = ffi::ASN1_STRING_to_UTF8(&mut ptr, self.as_ptr() as *const _);
+            if len < 0 {
+                return Err(ErrorStack::get());
+            }
+
+            Ok(OpensslString::from_ptr(ptr as *mut c_char))
+        }
+    }
+}
 impl fmt::Display for Asn1GeneralizedTimeRef {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         unsafe {
