@@ -10,7 +10,7 @@ use foreign_types::{ForeignType, ForeignTypeRef};
 use libc::c_uint;
 use std::ptr;
 
-use crate::asn1::Asn1OctetString;
+use crate::asn1::Asn1OctetStringRef;
 use crate::bio::{MemBio, MemBioSlice};
 use crate::error::ErrorStack;
 use crate::pkey::{HasPrivate, PKeyRef};
@@ -121,15 +121,6 @@ impl CmsContentInfoRef {
         }
     }
 
-    /// Gets content depending on its type.
-    /// For exapmle, eContent of EncapsulatedContentInfo if it is `NID_pkcs7_signed`.
-    #[corresponds(CMS_get0_content)]
-    pub fn get_content(&self) -> Result<Vec<u8>, ErrorStack> {
-        Ok(Vec::from(unsafe {
-            Asn1OctetString::from_ptr(cvt_p(ffi::CMS_get0_content(self.as_ptr()))?).as_slice()
-        }))
-    }
-
     to_der! {
         /// Serializes this CmsContentInfo using DER.
         #[corresponds(i2d_CMS_ContentInfo)]
@@ -142,6 +133,21 @@ impl CmsContentInfoRef {
         #[corresponds(PEM_write_bio_CMS)]
         to_pem,
         ffi::PEM_write_bio_CMS
+    }
+}
+
+impl<'a> CmsContentInfoRef {
+    /// Gets content depending on its type.
+    /// For exapmle, eContent of EncapsulatedContentInfo if it is `NID_pkcs7_signed`.
+    #[corresponds(CMS_get0_content)]
+    pub fn get_content(&'a self) -> Result<&'a [u8], ErrorStack> {
+        unsafe {
+            let content_ptr = ffi::CMS_get0_content(self.as_ptr());
+            if content_ptr.is_null() || (*content_ptr).is_null() {
+                return Err(ErrorStack::get());
+            }
+            Ok(Asn1OctetStringRef::from_ptr(*content_ptr).as_slice())
+        }
     }
 }
 

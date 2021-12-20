@@ -54,5 +54,5 @@ extern "C" {
     ) -> c_int;
 
     #[cfg(ossl101)]
-    pub fn CMS_get0_content(cms: *mut ::CMS_ContentInfo) -> *mut ::ASN1_OCTET_STRING;
+    pub fn CMS_get0_content(cms: *mut ::CMS_ContentInfo) -> *mut *mut ::ASN1_OCTET_STRING;
 }
