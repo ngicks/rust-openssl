@@ -7,6 +7,10 @@ pub enum TS_ACCURACY {}
 pub enum TS_TST_INFO {}
 
 extern "C" {
+
+    pub fn TS_MSG_IMPRINT_free(a: *mut TS_MSG_IMPRINT);
+    pub fn TS_ACCURACY_free(a: *mut TS_ACCURACY);
+
     #[cfg(ossl101)]
     pub fn i2d_TS_TST_INFO(a: *const ::TS_TST_INFO, pp: *mut *mut c_uchar) -> c_int;
     #[cfg(ossl101)]
@@ -36,4 +40,6 @@ extern "C" {
     pub fn TS_TST_INFO_get_nonce(a: *const TS_TST_INFO) -> *const ASN1_INTEGER;
     #[cfg(ossl101)]
     pub fn TS_TST_INFO_get_tsa(a: *mut TS_TST_INFO) -> *mut GENERAL_NAME;
+    #[cfg(ossl101)]
+    pub fn PKCS7_to_TS_TST_INFO(token: *mut ::PKCS7) -> *mut TS_TST_INFO;
 }
