@@ -94,7 +94,6 @@ impl<'a> TsTstInfoRef {
 
     pub fn get_serial(&'a self) -> Result<&'a Asn1IntegerRef, ErrorStack> {
         unsafe {
-            // TS_TST_INFO_get_serial just returns pointer to member of internal struct
             let serial_ptr = ffi::TS_TST_INFO_get_serial(self.as_ptr());
             if serial_ptr.is_null() {
                 return Err(ErrorStack::get());
@@ -132,7 +131,6 @@ impl<'a> TsTstInfoRef {
 
     pub fn get_nonce(&'a self) -> Result<&'a Asn1IntegerRef, ErrorStack> {
         unsafe {
-            // TS_TST_INFO_get_serial just returns pointer to member of internal struct
             let serial_ptr = ffi::TS_TST_INFO_get_nonce(self.as_ptr());
             if serial_ptr.is_null() {
                 return Err(ErrorStack::get());
