@@ -2,7 +2,7 @@ use std::ptr;
 
 use crate::{
     asn1::{Asn1GeneralizedTimeRef, Asn1IntegerRef, Asn1ObjectRef},
-    cvt_n, cvt_p,
+    cvt_p,
     x509::GeneralNameRef,
 };
 use foreign_types::ForeignTypeRef;
