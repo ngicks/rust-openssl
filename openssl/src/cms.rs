@@ -6,14 +6,14 @@
 //! Data accepted by this module will be smime type `enveloped-data`.
 
 use bitflags::bitflags;
-use foreign_types::{ForeignType, ForeignTypeRef};
+use foreign_types::{ForeignType, ForeignTypeRef, Opaque};
 use libc::c_uint;
 use std::ptr;
 
 use crate::bio::{MemBio, MemBioSlice};
 use crate::error::ErrorStack;
 use crate::pkey::{HasPrivate, PKeyRef};
-use crate::stack::StackRef;
+use crate::stack::{Stack, StackRef, Stackable};
 use crate::symm::Cipher;
 use crate::x509::{X509Ref, X509};
 use crate::{cvt, cvt_p};
@@ -133,6 +133,16 @@ impl CmsContentInfoRef {
         to_pem,
         ffi::PEM_write_bio_CMS
     }
+
+    pub fn signer_infos(&self) -> Option<&StackRef<CmsSignerInfo>> {
+        unsafe {
+            let ptr = ffi::CMS_get0_SignerInfos(self.as_ptr());
+            if ptr.is_null() {
+                return None;
+            }
+            Some(StackRef::<CmsSignerInfo>::from_ptr(ptr))
+        }
+    }
 }
 
 impl CmsContentInfo {
@@ -225,6 +235,54 @@ impl CmsContentInfo {
             ))?;
 
             Ok(CmsContentInfo::from_ptr(cms))
+        }
+    }
+}
+
+/// A dummy free implementaion.
+/// There is no free function for CMS_SignerInfo, nor new function.
+fn dummy_free(_a: *mut ffi::CMS_SignerInfo) {}
+
+foreign_type_and_impl_send_sync! {
+    type CType = ffi::CMS_SignerInfo;
+    fn drop = dummy_free;
+
+    /// there is no owned type for this.
+    pub struct CmsSignerInfo;
+    /// Reference to [`CmsSignerInfo`]
+    ///
+    /// [`CmsSignerInfo`]:struct.CmsSignerInfo.html
+    pub struct CmsSignerInfoRef;
+}
+
+impl Stackable for CmsSignerInfo {
+    type StackType = ffi::stack_st_CMS_SignerInfo;
+}
+
+impl CmsSignerInfoRef {
+    /// Returns the issuer's subject name.
+    ///
+    /// This corresponds to `PKCS7_SIGNER_INFO`'s `issuer_and_serial.issuer` field.`
+    pub fn subject_name(&self) -> &X509NameRef {
+        unsafe {
+            let ias = (*self.as_ptr()).issuer_and_serial;
+            assert!(!ias.is_null());
+
+            let issuer = (*ias).issuer;
+            X509NameRef::from_const_ptr_opt(issuer).expect("subject name must not be null")
+        }
+    }
+
+    /// Returns the issuer's serial number.
+    ///
+    /// This corresponds to `PKCS7_SIGNER_INFO`'s `issuer_and_serial.serial` field.
+    pub fn serial_number(&self) -> &Asn1IntegerRef {
+        unsafe {
+            let ias = (*self.as_ptr()).issuer_and_serial;
+            assert!(!ias.is_null());
+
+            let serial = (*ias).serial;
+            Asn1IntegerRef::from_const_ptr_opt(serial).expect("serial number must not be null")
         }
     }
 }

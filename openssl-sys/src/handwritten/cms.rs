@@ -3,6 +3,10 @@ use *;
 
 pub enum CMS_ContentInfo {}
 
+pub enum CMS_SignerInfo {}
+
+stack!(stack_st_CMS_SignerInfo);
+
 extern "C" {
     #[cfg(ossl101)]
     pub fn CMS_ContentInfo_free(cms: *mut ::CMS_ContentInfo);
@@ -52,4 +56,7 @@ extern "C" {
         out: *mut ::BIO,
         flags: c_uint,
     ) -> c_int;
+
+    #[cfg(ossl101)]
+    pub fn CMS_get0_SignerInfos(cms: *mut CMS_ContentInfo) -> *mut stack_st_CMS_SignerInfo;
 }
