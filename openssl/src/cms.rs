@@ -6,16 +6,17 @@
 //! Data accepted by this module will be smime type `enveloped-data`.
 
 use bitflags::bitflags;
-use foreign_types::{ForeignType, ForeignTypeRef, Opaque};
+use foreign_types::{ForeignType, ForeignTypeRef};
 use libc::c_uint;
 use std::ptr;
 
+use crate::asn1::Asn1IntegerRef;
 use crate::bio::{MemBio, MemBioSlice};
 use crate::error::ErrorStack;
 use crate::pkey::{HasPrivate, PKeyRef};
-use crate::stack::{Stack, StackRef, Stackable};
+use crate::stack::{StackRef, Stackable};
 use crate::symm::Cipher;
-use crate::x509::{X509Ref, X509};
+use crate::x509::{X509NameRef, X509Ref, X509};
 use crate::{cvt, cvt_p};
 use openssl_macros::corresponds;
 
@@ -134,13 +135,19 @@ impl CmsContentInfoRef {
         ffi::PEM_write_bio_CMS
     }
 
-    pub fn signer_infos(&self) -> Option<&StackRef<CmsSignerInfo>> {
+    #[corresponds(CMS_get1_certs)]
+    pub fn get_certs(&self) -> Result<&StackRef<X509>, ErrorStack> {
         unsafe {
-            let ptr = ffi::CMS_get0_SignerInfos(self.as_ptr());
-            if ptr.is_null() {
-                return None;
-            }
-            Some(StackRef::<CmsSignerInfo>::from_ptr(ptr))
+            let stack_ptr = cvt_p(ffi::CMS_get1_certs(self.as_ptr()))?;
+            Ok(StackRef::<X509>::from_ptr(stack_ptr))
+        }
+    }
+
+    #[corresponds(CMS_get0_SignerInfos)]
+    pub fn get_signer_infos(&self) -> Result<&StackRef<CmsSignerInfo>, ErrorStack> {
+        unsafe {
+            let stack_ptr = cvt_p(ffi::CMS_get0_SignerInfos(self.as_ptr()))?;
+            Ok(StackRef::<CmsSignerInfo>::from_ptr(stack_ptr))
         }
     }
 }
@@ -240,12 +247,12 @@ impl CmsContentInfo {
 }
 
 /// A dummy free implementaion.
-/// There is no free function for CMS_SignerInfo, nor new function.
-fn dummy_free(_a: *mut ffi::CMS_SignerInfo) {}
+/// There is no exported free function for CMS_SignerInfo, nor new function.
+fn dummy_free_cms_signer_info(_a: *mut ffi::CMS_SignerInfo) {}
 
 foreign_type_and_impl_send_sync! {
     type CType = ffi::CMS_SignerInfo;
-    fn drop = dummy_free;
+    fn drop = dummy_free_cms_signer_info;
 
     /// there is no owned type for this.
     pub struct CmsSignerInfo;
@@ -260,29 +267,25 @@ impl Stackable for CmsSignerInfo {
 }
 
 impl CmsSignerInfoRef {
-    /// Returns the issuer's subject name.
-    ///
-    /// This corresponds to `PKCS7_SIGNER_INFO`'s `issuer_and_serial.issuer` field.`
-    pub fn subject_name(&self) -> &X509NameRef {
+    /// returns issuer X509 name and serial number
+    #[corresponds(CMS_SignerInfo_get0_signer_id)]
+    pub fn get_issuer_sno(&self) -> Option<(&X509NameRef, &Asn1IntegerRef)> {
         unsafe {
-            let ias = (*self.as_ptr()).issuer_and_serial;
-            assert!(!ias.is_null());
-
-            let issuer = (*ias).issuer;
-            X509NameRef::from_const_ptr_opt(issuer).expect("subject name must not be null")
-        }
-    }
-
-    /// Returns the issuer's serial number.
-    ///
-    /// This corresponds to `PKCS7_SIGNER_INFO`'s `issuer_and_serial.serial` field.
-    pub fn serial_number(&self) -> &Asn1IntegerRef {
-        unsafe {
-            let ias = (*self.as_ptr()).issuer_and_serial;
-            assert!(!ias.is_null());
-
-            let serial = (*ias).serial;
-            Asn1IntegerRef::from_const_ptr_opt(serial).expect("serial number must not be null")
+            let mut issuer: *mut ffi::X509_NAME = ptr::null_mut();
+            let mut sno: *mut ffi::ASN1_INTEGER = ptr::null_mut();
+            let n = ffi::CMS_SignerInfo_get0_signer_id(
+                self.as_ptr(),
+                ptr::null_mut(),
+                &mut issuer as *mut _,
+                &mut sno as *mut _,
+            );
+            if n == 0 {
+                None
+            } else if issuer.is_null() || sno.is_null() {
+                None
+            } else {
+                Some((X509NameRef::from_ptr(issuer), Asn1IntegerRef::from_ptr(sno)))
+            }
         }
     }
 }
