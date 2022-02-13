@@ -136,7 +136,7 @@ impl CmsContentInfoRef {
     }
 
     #[corresponds(CMS_get1_certs)]
-    pub fn get_certs(&self) -> Result<&StackRef<X509>, ErrorStack> {
+    pub fn certs(&self) -> Result<&StackRef<X509>, ErrorStack> {
         unsafe {
             let stack_ptr = cvt_p(ffi::CMS_get1_certs(self.as_ptr()))?;
             Ok(StackRef::<X509>::from_ptr(stack_ptr))
@@ -144,7 +144,7 @@ impl CmsContentInfoRef {
     }
 
     #[corresponds(CMS_get0_SignerInfos)]
-    pub fn get_signer_infos(&self) -> Result<&StackRef<CmsSignerInfo>, ErrorStack> {
+    pub fn signer_infos(&self) -> Result<&StackRef<CmsSignerInfo>, ErrorStack> {
         unsafe {
             let stack_ptr = cvt_p(ffi::CMS_get0_SignerInfos(self.as_ptr()))?;
             Ok(StackRef::<CmsSignerInfo>::from_ptr(stack_ptr))
@@ -267,17 +267,18 @@ impl Stackable for CmsSignerInfo {
 }
 
 impl CmsSignerInfoRef {
+    pub fn to_owned() {}
     /// returns issuer X509 name and serial number
     #[corresponds(CMS_SignerInfo_get0_signer_id)]
-    pub fn get_issuer_sno(&self) -> Option<(&X509NameRef, &Asn1IntegerRef)> {
+    pub fn issuer_sno(&self) -> Option<(&X509NameRef, &Asn1IntegerRef)> {
         unsafe {
             let mut issuer: *mut ffi::X509_NAME = ptr::null_mut();
             let mut sno: *mut ffi::ASN1_INTEGER = ptr::null_mut();
             let n = ffi::CMS_SignerInfo_get0_signer_id(
                 self.as_ptr(),
                 ptr::null_mut(),
-                &mut issuer as *mut _,
-                &mut sno as *mut _,
+                &mut issuer as *mut *mut _,
+                &mut sno as *mut *mut _,
             );
             if n == 0 {
                 None
