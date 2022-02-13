@@ -137,14 +137,18 @@ impl CmsContentInfoRef {
 
     /// Gets content depending on its type.
     /// For exapmle, eContent of EncapsulatedContentInfo if its contentType is `NID_pkcs7_signed`.
+    /// if content is detached, returns None.
     #[corresponds(CMS_get0_content)]
-    pub fn get_content(&self) -> Result<&[u8], ErrorStack> {
+    pub fn get_content(&self) -> Result<Option<&[u8]>, ErrorStack> {
         unsafe {
             let content_ptr = ffi::CMS_get0_content(self.as_ptr());
-            if content_ptr.is_null() || (*content_ptr).is_null() {
-                return Err(ErrorStack::get());
+            if content_ptr.is_null() {
+                Err(ErrorStack::get())
+            } else if (*content_ptr).is_null() {
+                Ok(None)
+            } else {
+                Ok(Some(Asn1OctetStringRef::from_ptr(*content_ptr).as_slice()))
             }
-            Ok(Asn1OctetStringRef::from_ptr(*content_ptr).as_slice())
         }
     }
 }
