@@ -140,7 +140,7 @@ impl CmsContentInfoRef {
     /// If CMS Content Info is unsupported type, error is raised.
     /// If content is detached, returned value is None.
     #[corresponds(CMS_get0_content)]
-    pub fn content(&self) -> Result<Option<&Asn1OctetStringRef>, ErrorStack> {
+    pub fn get_content(&self) -> Result<Option<&Asn1OctetStringRef>, ErrorStack> {
         unsafe {
             let content_ptr = ffi::CMS_get0_content(self.as_ptr());
             if content_ptr.is_null() {
