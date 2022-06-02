@@ -178,14 +178,14 @@ extern "C" {
 
     pub fn TS_REQ_set_msg_imprint(a: *mut TS_REQ, msg_imprint: *mut TS_MSG_IMPRINT) -> c_int;
     pub fn TS_REQ_get_msg_imprint(a: *mut TS_REQ) -> *mut TS_MSG_IMPRINT;
-    pub fn TS_MSG_IMPRINT_set_algo(a: *mut TS_MSG_IMPRINT, alg: *mut ::X509_ALGOR) -> c_int;
 
+    pub fn TS_MSG_IMPRINT_set_algo(a: *mut TS_MSG_IMPRINT, alg: *mut ::X509_ALGOR) -> c_int;
     pub fn TS_MSG_IMPRINT_get_algo(a: *mut TS_MSG_IMPRINT) -> *mut ::X509_ALGOR;
     pub fn TS_MSG_IMPRINT_set_msg(a: *mut TS_MSG_IMPRINT, d: *mut c_uchar, len: c_int) -> c_int;
     pub fn TS_MSG_IMPRINT_get_msg(a: *mut TS_MSG_IMPRINT) -> *mut ::ASN1_OCTET_STRING;
+
     pub fn TS_REQ_set_policy_id(a: *mut TS_REQ, policy: *const ::ASN1_OBJECT) -> c_int;
     pub fn TS_REQ_get_policy_id(a: *mut TS_REQ) -> *mut ::ASN1_OBJECT;
-
     pub fn TS_REQ_set_nonce(a: *mut TS_REQ, nonce: *const ::ASN1_INTEGER) -> c_int;
     pub fn TS_REQ_get_nonce(a: *const TS_REQ) -> *const ::ASN1_INTEGER;
     pub fn TS_REQ_set_cert_req(a: *mut TS_REQ, cert_req: c_int) -> c_int;
